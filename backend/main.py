@@ -7,6 +7,8 @@ import spacy
 import uvicorn
 import fitz  # PyMuPDF
 from pydantic import BaseModel
+from datetime import datetime
+import os
 
 # Load SpaCy NLP model
 nlp = spacy.load("en_core_web_sm")
@@ -21,6 +23,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+USE_API_KEY = False
+VALID_API_KEY = os.getenv("API_KEY", "test123")
 
 # Sample job postings database (mock)
 job_postings = [
@@ -48,6 +53,12 @@ class MatchResult(BaseModel):
     job_id: int
     title: str
     match_score: float
+
+
+class ResumeResult(BaseModel):
+    filename: str
+    extracted_skills: List[str]
+    matches: List[MatchResult]
 
 
 def extract_skills(text: str) -> List[str]:
@@ -85,20 +96,38 @@ def root():
     return {"message": "🚀 Resume Matcher API is live!"}
 
 
-@app.post("/upload_resume")
-async def upload_resume(file: UploadFile = File(...)):
-    content = await file.read()
-    if file.filename.endswith(".pdf"):
-        text = extract_text_from_pdf(content)
-    else:
-        text = content.decode("utf-8")
+@app.post("/upload_resumes")
+async def upload_resumes(
+    files: List[UploadFile] = File(...),
+    job_description: Optional[UploadFile] = File(None),
+    x_api_key: Optional[str] = Header(None)
+):
+    if USE_API_KEY and x_api_key != VALID_API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API key")
 
-    extracted_skills = extract_skills(text)
-    matches = match_jobs(extracted_skills)
-    return {
-        "extracted_skills": extracted_skills,
-        "matches": [m.dict() for m in matches]
-    }
+    job_skills = None
+    if job_description:
+        job_bytes = await job_description.read()
+        job_text = extract_text_from_pdf(job_bytes) if job_description.filename.endswith(".pdf") else job_bytes.decode("utf-8")
+        job_skills = extract_skills(job_text)
+
+    results = []
+    for file in files:
+        content = await file.read()
+        text = extract_text_from_pdf(content) if file.filename.endswith(".pdf") else content.decode("utf-8")
+
+        extracted_skills = extract_skills(text)
+        matches = match_jobs(extracted_skills, [
+            {"id": 0, "title": "Custom Job", "skills": job_skills}
+        ]) if job_skills else match_jobs(extracted_skills, job_postings)
+
+        results.append(ResumeResult(
+            filename=file.filename,
+            extracted_skills=extracted_skills,
+            matches=matches
+        ))
+
+    return {"results": [r.dict() for r in results]}
 
 
 if __name__ == "__main__":
