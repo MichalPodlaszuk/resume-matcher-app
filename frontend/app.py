@@ -1,24 +1,33 @@
 import streamlit as st
 import requests
 
+st.set_page_config(page_title="AI Resume Matcher", page_icon="📄")
 st.title("📄 AI Resume Matcher")
-st.write("Upload your resume (PDF or TXT) to see your best job matches.")
+st.write("Upload your resume and get matched to jobs using AI!")
 
-uploaded_file = st.file_uploader("Choose a resume file", type=["pdf", "txt"])
+# Upload file input
+uploaded_file = st.file_uploader("Choose a resume file (PDF or TXT)", type=["pdf", "txt"])
 
 if uploaded_file:
-    with st.spinner("Processing your resume..."):
+    with st.spinner("Uploading and analyzing resume..."):
         files = {'file': (uploaded_file.name, uploaded_file.read())}
-        # ⬇ Change this to your deployed backend URL if hosted
-        response = requests.post("http://localhost:8000/upload_resume", files=files)
 
-        if response.ok:
-            data = response.json()
-            st.subheader("✅ Extracted Skills:")
-            st.write(", ".join(data["extracted_skills"]))
+        # IMPORTANT: Replace this with your deployed Render backend URL
+        api_url = "https://resume-matcher-app.onrender.com/upload_resume"
 
-            st.subheader("📊 Job Matches:")
-            for match in data["matches"]:
-                st.markdown(f"**{match['title']}** — Match Score: `{match['match_score']*100:.0f}%`")
-        else:
-            st.error("❌ Something went wrong. Try again.")
+        try:
+            response = requests.post(api_url, files=files)
+            if response.ok:
+                data = response.json()
+                st.success("Skills and job matches found!")
+
+                st.subheader("🧠 Extracted Skills")
+                st.write(", ".join(data.get("extracted_skills", [])))
+
+                st.subheader("💼 Best Job Matches")
+                for match in data.get("matches", []):
+                    st.markdown(f"**{match['title']}** — Match Score: `{match['match_score']*100:.0f}%`")
+            else:
+                st.error("Something went wrong. Please try again.")
+        except requests.exceptions.RequestException as e:
+            st.error(f"Request failed: {e}")
