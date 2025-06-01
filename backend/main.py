@@ -1,6 +1,6 @@
 # AI-Powered Resume Parser + Job Matcher (Full Web App)
 
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 import spacy
