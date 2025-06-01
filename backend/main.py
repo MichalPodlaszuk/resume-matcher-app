@@ -80,6 +80,11 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
     return text
 
 
+@app.get("/")
+def root():
+    return {"message": "🚀 Resume Matcher API is live!"}
+
+
 @app.post("/upload_resume")
 async def upload_resume(file: UploadFile = File(...)):
     content = await file.read()
