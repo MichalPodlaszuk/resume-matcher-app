@@ -3,8 +3,7 @@ import requests
 import json
 from streamlit_lottie import st_lottie
 import time
-from bs4 import BeautifulSoup
-import cloudscraper
+import io
 
 st.set_page_config(
     page_title="Resume Matcher",
@@ -39,6 +38,7 @@ with col2:
     jd_file = st.file_uploader("Upload Job Description (PDF)", type=["pdf"])
 
 job_url = st.text_input("📎 Or paste a link to an Indeed job posting")
+SERPAPI_KEY = st.secrets["SERPAPI_KEY"] if "SERPAPI_KEY" in st.secrets else st.text_input("🔑 SerpAPI Key")
 
 # Load animations
 @st.cache_data
@@ -57,21 +57,21 @@ if not resume_file or (not jd_file and not job_url):
     if upload_anim:
         st_lottie(upload_anim, speed=1, height=300)
 
-def extract_text_from_indeed(url):
+def extract_text_from_indeed_serpapi(url, api_key):
     try:
-        scraper = cloudscraper.create_scraper()
-        response = scraper.get(url)
-        if response.status_code != 200:
-            raise Exception("Non-200 response")
-        soup = BeautifulSoup(response.text, "html.parser")
-        job_text = "\n".join([tag.get_text(strip=True) for tag in soup.find_all(['p', 'li'])])
-        return job_text
+        params = {
+            "engine": "google_jobs_listing",
+            "url": url,
+            "api_key": api_key
+        }
+        response = requests.get("https://serpapi.com/search", params=params)
+        data = response.json()
+        return data.get("description")
     except Exception as e:
-        st.error(f"❌ Failed to extract job description: {e}")
+        st.error(f"Failed to extract job description from SerpAPI: {e}")
         return None
 
-
-if resume_file and (jd_file or job_url):
+if resume_file and (jd_file or (job_url and SERPAPI_KEY)):
     st.write("### 🔄 Matching in progress...")
     if match_anim:
         st_lottie(match_anim, speed=1, height=300)
@@ -81,20 +81,13 @@ if resume_file and (jd_file or job_url):
     if jd_file:
         files["job_description"] = jd_file
     elif job_url:
-        jd_text = extract_text_from_indeed(job_url)
-        print("jd text:", jd_text, "jd text ends")
+        jd_text = extract_text_from_indeed_serpapi(job_url, SERPAPI_KEY)
         if jd_text:
-            files["job_description"] = ("job_desc.txt", jd_text)
+            files["job_description"] = ("job_desc.txt", io.StringIO(jd_text))
         else:
-            st.error("❌ Could not extract job description from the provided URL.")
             st.stop()
 
-    data = {"job_description_text": jd_text}
-    response = requests.post(
-        "https://resume-matcher-backend.onrender.com/upload_resumes",
-        files=files,
-        data=data
-    )
+    response = requests.post("https://resume-matcher-app.onrender.com/match", files=files)
 
     if response.status_code == 200:
         result = response.json()

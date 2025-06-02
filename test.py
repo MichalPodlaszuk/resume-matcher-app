@@ -1,14 +1,19 @@
 import requests
 from bs4 import BeautifulSoup
+import cloudscraper
+from serpapi import GoogleSearch
 
 
-def extract_text_from_indeed(url):
-    headers = {"User-Agent": "Mozilla/5.0"}
-    response = requests.get(url, headers=headers)
-    soup = BeautifulSoup(response.text, "html.parser")
-    soup_text="\n".join([",".join([tag.name, tag.get_text()]) for tag in soup.find_all()])
-    print(soup_text)
-    job_text = "\n".join([tag.get_text(strip=True) for tag in soup.find_all('li')])
-    return job_text
+def extract_text_from_indeed(url, api_key):
+    params = {
+        "engine": "google_jobs_listing",
+        "url": url,
+        "api_key": api_key
+    }
+    response = requests.get("https://serpapi.com/search", params=params)
+    data = response.json()
+    return data.get("description")
 
-extract_text_from_indeed("https://pl.indeed.com/q-junior-python-oferty-pracy.html?vjk=36a0eaaee543b83f")
+
+
+print(extract_text_from_indeed("https://pl.indeed.com/q-junior-python-oferty-pracy.html?vjk=36a0eaaee543b83f", ))
