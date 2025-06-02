@@ -8,6 +8,7 @@ import uvicorn
 import fitz  # PyMuPDF
 from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional
 import os
 
 # Load SpaCy NLP model
