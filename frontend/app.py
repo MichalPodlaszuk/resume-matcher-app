@@ -20,6 +20,10 @@ st.markdown("""
     color: #4CAF50;
     text-align: center;
 }
+.highlight {
+    color: #2196F3;
+    font-weight: bold;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -99,7 +103,14 @@ if resume_file and (jd_file or job_url):
             st.error("❌ Weak Match")
 
         with st.expander("📋 Full Matching Breakdown"):
-            st.json(result.get("details", {}))
+            details = result.get("details", {})
+            for category, matches in details.items():
+                st.markdown(f"### 🔹 {category.capitalize()}")
+                for match in matches:
+                    if isinstance(match, str):
+                        st.markdown(f"- <span class='highlight'>{match}</span>", unsafe_allow_html=True)
+                    else:
+                        st.write(match)
 
         st.download_button("📄 Download Resume", resume_file, file_name="resume.pdf")
         if jd_file:
