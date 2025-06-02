@@ -81,9 +81,15 @@ if resume_file and (jd_file or job_url):
         if jd_text:
             files["job_description"] = ("job_desc.txt", jd_text)
         else:
+            st.error("❌ Could not extract job description from the provided URL.")
             st.stop()
 
-    response = requests.post("https://resume-matcher-app.onrender.com/upload_resumes", files=files)
+    data = {"job_description_text": jd_text}
+    response = requests.post(
+        "https://resume-matcher-backend.onrender.com/upload_resumes",
+        files=files,
+        data=data
+    )
 
     if response.status_code == 200:
         result = response.json()

@@ -101,6 +101,7 @@ def root():
 async def upload_resumes(
     files: List[UploadFile] = File(...),
     job_description: Optional[UploadFile] = File(None),
+    job_description_text: Optional[str] = Form(None),
     x_api_key: Optional[str] = Header(None)
 ):
     if USE_API_KEY and x_api_key != VALID_API_KEY:
@@ -111,6 +112,9 @@ async def upload_resumes(
         job_bytes = await job_description.read()
         job_text = extract_text_from_pdf(job_bytes) if job_description.filename.endswith(".pdf") else job_bytes.decode("utf-8")
         job_skills = extract_skills(job_text)
+    elif job_description_text:
+        job_skills = extract_skills(job_description_text)
+
 
     results = []
     for file in files:
