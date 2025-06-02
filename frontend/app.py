@@ -4,6 +4,7 @@ import json
 from streamlit_lottie import st_lottie
 import time
 from bs4 import BeautifulSoup
+import cloudscraper
 
 st.set_page_config(
     page_title="Resume Matcher",
@@ -58,14 +59,17 @@ if not resume_file or (not jd_file and not job_url):
 
 def extract_text_from_indeed(url):
     try:
-        headers = {"User-Agent": "Mozilla/5.0"}
-        response = requests.get(url, headers=headers)
+        scraper = cloudscraper.create_scraper()
+        response = scraper.get(url)
+        if response.status_code != 200:
+            raise Exception("Non-200 response")
         soup = BeautifulSoup(response.text, "html.parser")
         job_text = "\n".join([tag.get_text(strip=True) for tag in soup.find_all(['p', 'li'])])
         return job_text
     except Exception as e:
-        st.error(f"Failed to extract job description from link: {e}")
+        st.error(f"❌ Failed to extract job description: {e}")
         return None
+
 
 if resume_file and (jd_file or job_url):
     st.write("### 🔄 Matching in progress...")
@@ -78,7 +82,7 @@ if resume_file and (jd_file or job_url):
         files["job_description"] = jd_file
     elif job_url:
         jd_text = extract_text_from_indeed(job_url)
-        print(jd_text)
+        print("jd text:", jd_text, "jd text ends")
         if jd_text:
             files["job_description"] = ("job_desc.txt", jd_text)
         else:

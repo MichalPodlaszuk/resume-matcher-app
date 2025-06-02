@@ -4,3 +4,4 @@ pillow
 matplotlib
 streamlit-lottie==0.0.3
 beautifulsoup4
+cloudscraper
