@@ -2,3 +2,5 @@ streamlit
 requests
 pillow
 matplotlib
+streamlit-lottie
+beautifulsoup4
