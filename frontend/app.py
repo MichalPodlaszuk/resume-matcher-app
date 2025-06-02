@@ -83,7 +83,7 @@ if resume_file and (jd_file or job_url):
         else:
             st.stop()
 
-    response = requests.post("https://resume-matcher-app.onrender.com/upload_resume", files=files)
+    response = requests.post("https://resume-matcher-app.onrender.com/upload_resumes", files=files)
 
     if response.status_code == 200:
         result = response.json()
