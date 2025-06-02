@@ -78,6 +78,7 @@ if resume_file and (jd_file or job_url):
         files["job_description"] = jd_file
     elif job_url:
         jd_text = extract_text_from_indeed(job_url)
+        print(jd_text)
         if jd_text:
             files["job_description"] = ("job_desc.txt", jd_text)
         else:
