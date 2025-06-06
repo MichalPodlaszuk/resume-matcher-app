@@ -68,7 +68,7 @@ if resume_file and (jd_file or job_text):
     elif job_text:
         files["job_description"] = ("job_desc.txt", io.StringIO(job_text))
 
-    response = requests.post("https://resume-matcher-app.onrender.com/match", files=files)
+    response = requests.post("https://resume-matcher-app.onrender.com/upload_resumes", files=files)
 
     if response.status_code == 200:
         result = response.json()
