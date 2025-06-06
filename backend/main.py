@@ -73,13 +73,21 @@ def extract_skills(text: str) -> List[str]:
     return found_skills
 
 
-def match_jobs(user_skills: List[str]) -> List[MatchResult]:
+def match_jobs(user_skills: List[str], jobs: List[dict]) -> List[MatchResult]:
     matches = []
-    for job in job_postings:
-        overlap = set(user_skills) & set(job["skills"])
-        score = len(overlap) / len(job["skills"])
+    for job in jobs:
+        required_skills = set(job["skills"])
+        user_skill_set = set(user_skills)
+        overlap = user_skill_set & required_skills
+        score = len(overlap) / len(required_skills) if required_skills else 0
+
         if score > 0:
-            matches.append(MatchResult(job_id=job["id"], title=job["title"], match_score=round(score, 2)))
+            matches.append(MatchResult(
+                job_id=job["id"],
+                title=job["title"],
+                match_score=round(score, 2)
+            ))
+
     matches.sort(key=lambda x: x.match_score, reverse=True)
     return matches
 
