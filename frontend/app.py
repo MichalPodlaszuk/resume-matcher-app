@@ -29,7 +29,7 @@ st.markdown("""
 
 st.markdown('<div class="big-font">🧠 Smart Resume Matcher</div>', unsafe_allow_html=True)
 
-st.write("## Upload Resume and Job Description or Paste Job Link")
+st.write("## Upload Resume and Job Description or Paste Job Text")
 
 col1, col2 = st.columns(2)
 with col1:
@@ -37,8 +37,7 @@ with col1:
 with col2:
     jd_file = st.file_uploader("Upload Job Description (PDF)", type=["pdf"])
 
-job_url = st.text_input("📎 Or paste a link to an Indeed job posting")
-SERPAPI_KEY = st.secrets["SERPAPI_KEY"] if "SERPAPI_KEY" in st.secrets else st.text_input("🔑 SerpAPI Key")
+job_text = st.text_area("📝 Or paste the full job description here (e.g. from an Indeed post)")
 
 # Load animations
 @st.cache_data
@@ -52,26 +51,12 @@ upload_anim = load_lottie_url("https://lottie.host/22632438-e28d-4e18-8f18-9870c
 match_anim = load_lottie_url("https://lottie.host/84e0eae3-fc25-4192-a50f-792c33ae218e/I8cWZr9sLf.json")
 success_anim = load_lottie_url("https://lottie.host/abe309e6-d9f2-42b3-8d2e-3be342c11eb0/fD63tuvrXZ.json")
 
-if not resume_file or (not jd_file and not job_url):
-    st.info("📤 Please upload a resume and either a job description or paste a job link.")
+if not resume_file or (not jd_file and not job_text):
+    st.info("📤 Please upload a resume and either a job description file or paste the job text.")
     if upload_anim:
         st_lottie(upload_anim, speed=1, height=300)
 
-def extract_text_from_indeed_serpapi(url, api_key):
-    try:
-        params = {
-            "engine": "google_jobs_listing",
-            "url": url,
-            "api_key": api_key
-        }
-        response = requests.get("https://serpapi.com/search", params=params)
-        data = response.json()
-        return data.get("description")
-    except Exception as e:
-        st.error(f"Failed to extract job description from SerpAPI: {e}")
-        return None
-
-if resume_file and (jd_file or (job_url and SERPAPI_KEY)):
+if resume_file and (jd_file or job_text):
     st.write("### 🔄 Matching in progress...")
     if match_anim:
         st_lottie(match_anim, speed=1, height=300)
@@ -80,12 +65,8 @@ if resume_file and (jd_file or (job_url and SERPAPI_KEY)):
 
     if jd_file:
         files["job_description"] = jd_file
-    elif job_url:
-        jd_text = extract_text_from_indeed_serpapi(job_url, SERPAPI_KEY)
-        if jd_text:
-            files["job_description"] = ("job_desc.txt", io.StringIO(jd_text))
-        else:
-            st.stop()
+    elif job_text:
+        files["job_description"] = ("job_desc.txt", io.StringIO(job_text))
 
     response = requests.post("https://resume-matcher-app.onrender.com/match", files=files)
 
