@@ -61,14 +61,19 @@ if resume_file and (jd_file or job_text):
     if match_anim:
         st_lottie(match_anim, speed=1, height=300)
 
-    files = {"resume": resume_file}
+    files = {"files": (resume_file.name, resume_file, resume_file.type)}
+    data = {}
 
     if jd_file:
-        files["job_description"] = jd_file
+        files["job_description"] = (jd_file.name, jd_file, jd_file.type)
     elif job_text:
-        data = {"job_description_text": job_text}
+        data["job_description_text"] = job_text
 
-    response = requests.post("https://resume-matcher-app.onrender.com/upload_resumes", files=files, data=data)
+    response = requests.post(
+        "https://resume-matcher-app.onrender.com/upload_resumes",
+        files=files,
+        data=data
+    )
 
     if response.status_code == 200:
         result = response.json()
